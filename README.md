@@ -1,6 +1,6 @@
 # Windows & Linux System Administration
 
-A hands-on sysadmin lab covering Active Directory, Group Policy, Linux user management, shell scripting, and log analysis. Built on Windows Server 2022 and Ubuntu Server 26.04 in a VirtualBox isolated lab environment.
+A hands-on sysadmin lab covering Active Directory, Group Policy, Linux user management, shell scripting, and log analysis. Built on Windows Server 2022 and Ubuntu Server 26.04 in a VirtualBox lab environment.
 
 ---
 
