@@ -1,189 +1,243 @@
-# Log Analysis
+# IT Support Lab — Project 3: Windows & Linux System Administration
 
-## Overview
-
-Logs are the primary evidence trail in IT security. Knowing where to look, what to filter for, and what each event means is a core skill for helpdesk, sysadmin, and SOC roles. This phase covers log analysis on both Windows (Event Viewer) and Linux (auth.log + journald).
+A hands-on sysadmin lab covering Active Directory, Group Policy, Linux user management, shell scripting, and log analysis. Built on Windows Server 2022 and Ubuntu Server 26.04 in a VirtualBox isolated lab environment.
 
 ---
 
-## Part 1 — Windows Event Viewer
+## What This Project Covers
 
-### Opening Event Viewer
-
-Search "Event Viewer" in the Start menu, or run `eventvwr.msc`.
-
-Navigate to: **Windows Logs → Security**
-
-The Security log records all auditable events — logons, account changes, policy changes, and more. The volume can be high (thousands of events), so filtering by Event ID is essential.
-
-### How to Filter by Event ID
-
-In the Actions panel on the right → **Filter Current Log** → enter the Event ID in the field → click OK.
-
----
-
-### Event ID 4624 — Successful Logon
-
-**What it means:** An account successfully authenticated and a session was established.
-
-**Filter:**
-
-![Filter to 4624](screenshots/filter_to_4624.png)
-
-**Filtered results and event detail:**
-
-![Successful Logon Events](screenshots/event_viewer_successful_logon.png)
-
-**Individual event properties:**
-
-![Successful Logon Example](screenshots/successful_login_example.png)
-
-**Key fields to check:**
-- **Account Name** — which account logged on
-- **Logon Type** — 2 = interactive (local), 3 = network, 10 = remote interactive (RDP)
-- **Computer** — which machine the logon occurred on
-- **Logged** — timestamp of the event
-
-**When to investigate:** After-hours logons, logons from unexpected accounts (e.g. `Guest`, `krbtgt`), or a surge of 4624 events immediately following repeated 4625 failures (potential successful brute-force).
-
----
-
-### Event ID 4625 — Failed Logon
-
-**What it means:** An account attempted to authenticate but failed.
-
-**Filter:**
-
-![Filter to 4625](screenshots/filter_to_4625.png)
-
-**Filtered results:**
-
-![Failed Logon Events](screenshots/event_viewer_failed_logon.png)
-
-**Individual event properties:**
-
-![Failed Logon Example](screenshots/bad_password_example.png)
-
-In the lab, the failure reason shown is **Unknown user name or bad password** with status `0xC000006D` and sub-status `0xC000006A` (correct username, wrong password).
-
-**Common sub-status codes:**
-
-| Sub-status | Meaning |
+| Area | Topics |
 |---|---|
-| 0xC000006A | Correct username, wrong password |
-| 0xC0000064 | Username does not exist |
-| 0xC0000234 | Account is locked out |
-| 0xC0000072 | Account is disabled |
-
-**When to investigate:** Multiple 4625 events for the same account in a short window is a strong indicator of a brute-force or credential stuffing attack. Correlate with 4740 (lockout) and 4624 (did it eventually succeed?).
-
----
-
-### Event ID 4720 — User Account Created
-
-**What it means:** A new user account was created in Active Directory.
-
-**Filter:**
-
-![Filter to 4720](screenshots/filter_to_4720.png)
-
-**Filtered results:**
-
-![Account Created Events](screenshots/event_viewer_successful_created_account.png)
-
-**Individual event properties:**
-
-![Account Created Example](screenshots/account_created_successfully_example.png)
-
-The event records which administrator account created the new user (`LAB\Administrator` in this lab) and the timestamp. In a real environment, every 4720 event should correspond to an approved IT ticket or onboarding request.
-
-**When to investigate:** Any 4720 event that doesn't match a known provisioning request is a red flag — it could indicate an attacker creating a backdoor account for persistence.
+| Windows Server | Active Directory, Organizational Units, User & Group Management |
+| Group Policy | Password Policy, Account Lockout, Audit Policy, OU-scoped Restrictions |
+| Linux | User & Group Management, File Permissions, Directory Access Control |
+| Scripting | Bash user audit script, PowerShell AD audit script, cron scheduling |
+| Log Analysis | Windows Event Viewer (Event IDs 4624/4625/4720), Linux auth.log & journald |
 
 ---
 
-### Event ID Reference Summary
+## Lab Environment
 
-| Event ID | Event | Category | What to look for |
+- **Hypervisor:** VirtualBox
+- **Network:** Internal Network (`labnet`) — isolated from host
+- **Windows Server:** 2022 Evaluation (Desktop Experience), static IP `192.168.10.5`, domain `lab.local`
+- **Ubuntu Server:** 26.04 LTS, reused from P2
+
+---
+
+## Project Structure
+
+```
+it-support-lab-p3/
+├── README.md
+├── docs/
+│   ├── active-directory-setup.md
+│   ├── group-policy-config.md
+│   ├── linux-user-management.md
+│   ├── shell-scripting.md
+│   └── log-analysis.md
+├── scripts/
+│   ├── user-audit.sh
+│   └── user-audit.ps1
+└── screenshots/
+```
+
+---
+
+## Phase 1 — Active Directory Setup
+
+→ [Full documentation](docs/active-directory-setup.md)
+
+Installed the **Active Directory Domain Services (AD DS)** role via Server Manager and promoted the server to a domain controller for `lab.local`.
+
+Created three Organizational Units (OUs) to mirror a real company structure:
+
+```
+lab.local
+├── IT Department     → haziq.it, ali.it
+├── Finance Department → siti.finance, abu.finance
+└── HR Department     → rina.hr, farid.hr
+```
+
+Each department has its own **security group** (`IT-Staff`, `Finance-Staff`, `HR-Staff`). Users are assigned to groups — not managed individually — which reflects how access control is handled at scale in real environments.
+
+---
+
+## Phase 2 — Group Policy
+
+→ [Full documentation](docs/group-policy-config.md)
+
+### Security-Baseline GPO (domain-wide)
+
+Applied to `lab.local`. Configured under:
+`Computer Configuration → Policies → Windows Settings → Security Settings`
+
+**Password Policy**
+
+| Setting | Value |
+|---|---|
+| Minimum password length | 10 characters |
+| Maximum password age | 90 days |
+| Password must meet complexity requirements | Enabled |
+
+**Account Lockout Policy**
+
+| Setting | Value |
+|---|---|
+| Account lockout threshold | 5 invalid logon attempts |
+| Account lockout duration | 15 minutes |
+| Reset lockout counter after | 10 minutes |
+
+**Audit Policy** (Local Policies → Audit Policy)
+
+| Setting | Value |
+|---|---|
+| Audit account logon events | Success, Failure |
+| Audit logon events | Success, Failure |
+
+### IT-Restrictions GPO (IT Department OU only)
+
+Scoped to the `IT Department` OU to demonstrate that GPOs can target specific parts of the directory.
+
+`User Configuration → Policies → Administrative Templates → System`
+
+- **Prevent access to the command prompt** — Enabled (with script processing also disabled)
+
+> **Note:** In a real production environment this restriction would apply to standard users (Finance, HR) or kiosk machines — not IT staff who depend on CLI tools daily. This is used here purely to demonstrate OU-scoped GPO targeting.
+
+---
+
+## Phase 3 — Linux User Management & Permissions
+
+→ [Full documentation](docs/linux-user-management.md)
+
+Created users and groups on Ubuntu Server 26.04 to mirror the Windows AD structure:
+
+```bash
+sudo groupadd it-staff
+sudo groupadd finance-staff
+
+sudo useradd -m -s /bin/bash haziq.it
+sudo usermod -aG it-staff haziq.it
+sudo passwd haziq.it
+
+sudo useradd -m -s /bin/bash siti.finance
+sudo usermod -aG finance-staff siti.finance
+sudo passwd siti.finance
+```
+
+Set up department directories with group-based access control:
+
+```bash
+sudo mkdir -p /data/it /data/finance
+
+sudo chown root:it-staff /data/it
+sudo chmod 770 /data/it
+
+sudo chown root:finance-staff /data/finance
+sudo chmod 770 /data/finance
+```
+
+**Permission breakdown — `chmod 770`:**
+
+| Who | Read | Write | Execute |
 |---|---|---|---|
-| 4624 | Successful logon | Logon | After-hours, unusual accounts, post-failure success |
-| 4625 | Failed logon | Logon | Repeated failures = brute-force attempt |
-| 4720 | User account created | User Account Management | Unplanned account creation = possible backdoor |
-| 4740 | Account locked out | User Account Management | Repeated lockouts = active attack or misconfiguration |
-| 4648 | Logon with explicit credentials | Logon | Credential reuse, pass-the-hash indicators |
-| 4672 | Special privileges assigned | Privilege Use | Admin-level access granted at logon |
+| Owner (root) | ✅ | ✅ | ✅ |
+| Group members | ✅ | ✅ | ✅ |
+| Others | ❌ | ❌ | ❌ |
+
+**Cross-department access is denied** — `haziq.it` cannot read `/data/finance`, and `siti.finance` cannot read `/data/it`. Verified and documented in screenshots.
 
 ---
 
-## Part 2 — Linux Log Analysis
+## Phase 4 — Shell Scripting & Automation
 
-### The Two Approaches
+→ [Full documentation](docs/shell-scripting.md)
 
-Ubuntu 26.04 uses `systemd-journald` as its primary logging backend. The traditional `/var/log/auth.log` file may or may not exist depending on whether `rsyslog` is installed. Both methods are covered here.
+### Bash — User Audit Script ([`scripts/user-audit.sh`](scripts/user-audit.sh))
 
----
-
-### Traditional — `/var/log/auth.log`
-
-`auth.log` captures authentication events including SSH logins, sudo usage, PAM events, and su switches.
+Generates a report of active users, groups, and recent logins. Scheduled via cron to run daily at 08:00 and append to `/var/log/user-audit.log`.
 
 ```bash
-# View the last 50 lines
-sudo tail -50 /var/log/auth.log
-
-# Search for failed password attempts
-sudo grep "Failed password" /var/log/auth.log
+0 8 * * * /opt/scripts/user-audit.sh >> /var/log/user-audit.log 2>&1
 ```
 
-![auth.log Output](screenshots/authentication_log.png)
+### PowerShell — AD User Audit ([`scripts/user-audit.ps1`](scripts/user-audit.ps1))
 
-The log output shows `sudo` session events — each command run with elevated privileges is recorded, including the full command, the user who ran it, and the timestamp. This is exactly what you'd review during an incident to reconstruct what an account did.
-
-**Searching for failed logins:**
-
-![Failed Login auth.log](screenshots/failed_login.png)
-
-> **Ubuntu 26.04 note:** On a minimal Ubuntu 26.04 install, `auth.log` exists but may only capture `sudo` PAM events rather than SSH failures. If SSH login failures are missing from `auth.log`, use `journalctl` instead (see below).
+Queries Active Directory for all user accounts and exports a CSV report to `C:\Reports\user-audit.csv`. Captures name, SAM account name, department, last logon date, and enabled status — a real script used by IT admins for periodic access reviews.
 
 ---
 
-### Modern — `journalctl`
+## Phase 5 — Log Analysis
 
-`journalctl` queries the systemd journal directly and is always available regardless of whether `rsyslog` is installed.
+→ [Full documentation](docs/log-analysis.md)
 
-```bash
-# All SSH service logs
-sudo journalctl _SYSTEMD_UNIT=sshd.service
+With audit policies enabled in Phase 2, the Security event log now captures logon and account activity. This phase queries those logs to confirm events are being recorded correctly, and does the equivalent on the Linux side using `auth.log` and `journalctl`.
 
-# Search for failed password across all logs
-sudo journalctl | grep "Failed password"
+### Windows Event Viewer
 
-# Filter by priority (errors and above) in the last hour
-sudo journalctl -p err --since "1 hour ago"
+Filtered the Security log by Event ID to identify key authentication events:
 
-# Follow live (like tail -f for real-time monitoring)
-sudo journalctl -f
-```
-
-**Failed login via journalctl:**
-
-![Failed Login journalctl](screenshots/failed_login_journalctl.png)
-
----
-
-### Linux vs Windows Log Comparison
-
-| Concept | Windows | Linux |
+| Event ID | Meaning | When to look for it |
 |---|---|---|
-| Primary log tool | Event Viewer | journalctl |
-| Auth events file | Security event log | /var/log/auth.log or journald |
-| Failed login event | Event ID 4625 | "Failed password" in sshd logs |
-| Successful login event | Event ID 4624 | "Accepted password" or PAM session opened |
-| Account created | Event ID 4720 | useradd logged to auth.log |
-| Privilege escalation | Event ID 4672 | sudo session opened in auth.log |
-| Log query tool | Filter Current Log (GUI) or `Get-WinEvent` (PowerShell) | `grep`, `journalctl`, `awk` |
+| 4624 | Successful logon | Baseline activity; investigate after-hours or unusual accounts |
+| 4625 | Failed logon | Repeated failures may indicate brute-force or credential stuffing |
+| 4720 | User account created | Should always match an approved provisioning request |
+| 4740 | Account locked out | Follow up to confirm user error vs. active attack |
+
+### Linux Auth Logs
+
+Ubuntu 26.04 uses `systemd-journald` as the primary logging backend. The traditional `/var/log/auth.log` may exist but is not guaranteed on minimal installs.
+
+```bash
+# Traditional approach (works if rsyslog is installed)
+sudo tail -50 /var/log/auth.log
+sudo grep "Failed password" /var/log/auth.log
+
+# Modern approach — always available on Ubuntu 26.04
+sudo journalctl _SYSTEMD_UNIT=sshd.service
+sudo journalctl | grep "Failed password"
+```
+
+Both approaches are documented — showing awareness of the ongoing transition from syslog to journald in modern Ubuntu.
 
 ---
 
-## Why Log Analysis Matters
+## Key Concepts (Interview Ready)
 
-Logs are the first place you go during an incident. Whether you're investigating a locked account, a suspicious after-hours login, or an unauthorised configuration change — the answer is in the logs. Being comfortable reading both Windows Event Logs and Linux system logs, and knowing which Event IDs and keywords to search for, is a skill that directly translates to helpdesk escalations, sysadmin investigations, and SOC triage work.
+**What is Active Directory and why do companies use it?**
+AD is Microsoft's directory service for centralised identity and access management. It lets admins manage users, computers, and permissions from a single place rather than configuring each machine individually.
+
+**What is a GPO and how does it get applied?**
+A Group Policy Object is a set of configuration rules applied to users or computers in an AD domain. GPOs are linked to OUs, sites, or the domain itself, and are processed at startup (computer policy) or login (user policy).
+
+**What is the difference between `chmod 770` and `chmod 777`?**
+`chmod 770` grants full access to the owner and group only — everyone else is denied. `chmod 777` grants full access to all users including unauthenticated or low-privilege ones, which is a security risk and should almost never be used in production.
+
+**How would you find out who last logged into a Linux server?**
+Run `last` to see recent login history, or `sudo journalctl _SYSTEMD_UNIT=sshd.service` for SSH-based logins on modern Ubuntu.
+
+**What Event ID would you look for if someone's account was locked out?**
+Event ID **4740** — Account Locked Out. Cross-reference with 4625 (failed logons) in the minutes prior to understand the cause.
+
+---
+
+## Skills Demonstrated
+
+- Active Directory installation, domain promotion, and OU design
+- Group Policy creation, linking, and OU-scoped targeting
+- Linux user and group provisioning with `useradd`, `usermod`, `groupadd`
+- File system permission management with `chown` and `chmod`
+- Bash scripting and cron job scheduling
+- PowerShell scripting with the `ActiveDirectory` module
+- Windows Security Event Log analysis by Event ID
+- Linux log analysis using both `auth.log` and `journalctl`
+- Cross-platform documentation and portfolio writeup
+
+---
+
+## Notes
+
+- Windows Server is running on an unactivated evaluation license — the "Activate Windows" watermark visible in some screenshots is expected and does not affect lab functionality.
+- Ubuntu Server 26.04 ships with PHP 8.5 in its default repositories, which caused a compatibility issue in a separate project (osTicket). This project is unaffected.
+- The `last` command required manual installation on the 26.04 minimal install: `sudo apt install last`
