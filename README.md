@@ -1,4 +1,4 @@
-# IT Support Lab — Project 3: Windows & Linux System Administration
+# Windows & Linux System Administration
 
 A hands-on sysadmin lab covering Active Directory, Group Policy, Linux user management, shell scripting, and log analysis. Built on Windows Server 2022 and Ubuntu Server 26.04 in a VirtualBox isolated lab environment.
 
@@ -19,16 +19,16 @@ A hands-on sysadmin lab covering Active Directory, Group Policy, Linux user mana
 ## Lab Environment
 
 - **Hypervisor:** VirtualBox
-- **Network:** Internal Network (`labnet`) — isolated from host
-- **Windows Server:** 2022 Evaluation (Desktop Experience), static IP `192.168.10.5`, domain `lab.local`
-- **Ubuntu Server:** 26.04 LTS, reused from P2
+- **Network:** NAT — VM connects to the outside world through the host’s IP
+- **Windows Server:** 2022 Evaluation (Desktop Experience), domain `lab.local`
+- **Ubuntu Server:** 26.04 LTS
 
 ---
 
 ## Project Structure
 
 ```
-it-support-lab-p3/
+windows-active-directory-ubuntu-administration-lab/
 ├── README.md
 ├── docs/
 │   ├── active-directory-setup.md
@@ -200,25 +200,6 @@ sudo journalctl | grep "Failed password"
 ```
 
 Both approaches are documented — showing awareness of the ongoing transition from syslog to journald in modern Ubuntu.
-
----
-
-## Key Concepts (Interview Ready)
-
-**What is Active Directory and why do companies use it?**
-AD is Microsoft's directory service for centralised identity and access management. It lets admins manage users, computers, and permissions from a single place rather than configuring each machine individually.
-
-**What is a GPO and how does it get applied?**
-A Group Policy Object is a set of configuration rules applied to users or computers in an AD domain. GPOs are linked to OUs, sites, or the domain itself, and are processed at startup (computer policy) or login (user policy).
-
-**What is the difference between `chmod 770` and `chmod 777`?**
-`chmod 770` grants full access to the owner and group only — everyone else is denied. `chmod 777` grants full access to all users including unauthenticated or low-privilege ones, which is a security risk and should almost never be used in production.
-
-**How would you find out who last logged into a Linux server?**
-Run `last` to see recent login history, or `sudo journalctl _SYSTEMD_UNIT=sshd.service` for SSH-based logins on modern Ubuntu.
-
-**What Event ID would you look for if someone's account was locked out?**
-Event ID **4740** — Account Locked Out. Cross-reference with 4625 (failed logons) in the minutes prior to understand the cause.
 
 ---
 
