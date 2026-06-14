@@ -77,3 +77,7 @@ After creating each group, open its **Properties** → **Members** tab and add t
 ## Why This Matters in IT Support
 
 Active Directory is the backbone of identity management in most enterprise Windows environments. As an IT support professional, you'll interact with AD daily — resetting passwords, unlocking accounts, adding users to groups, and troubleshooting login issues. Understanding the structure (forest → domain → OU → user/group) is fundamental to doing that work confidently.
+
+---
+
+> **Screenshots:** The AD setup steps (OU creation, user creation, group membership) are covered in the `/screenshots` folder. Key evidence screenshots from later phases — the PowerShell audit output and Event Viewer 4720 events — confirm that all users and groups created here were provisioned correctly.

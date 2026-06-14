@@ -142,7 +142,11 @@ This GPO is linked to the **IT Department OU only**, demonstrating that Group Po
 
 **Prevent access to the command prompt** — Enabled
 
-![Prevent Command Prompt — Setting Location](../screenshots/user_configuration.png)
+The setting is found under the System folder in Administrative Templates. The right panel shows the full list of System policies with "Prevent access to the command prompt" highlighted:
+
+![Prevent Command Prompt — System Folder View](../screenshots/user_configuration.png)
+
+Double-clicking it opens the properties dialog where it is set to Enabled, with script processing also disabled:
 
 ![Prevent Command Prompt — Properties](../screenshots/prevent_access_command_prompt.png)
 

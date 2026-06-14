@@ -90,9 +90,13 @@ sudo crontab -l
 
 ### Create the Reports directory
 
+The `Export-Csv` line in the script will fail if `C:\Reports` doesn't already exist. Create it first:
+
 ```powershell
 New-Item -ItemType Directory -Path "C:\Reports" -Force
 ```
+
+> **Note:** The `-Force` flag means this won't error if the folder already exists, so it's safe to run every time.
 
 ### Script contents
 

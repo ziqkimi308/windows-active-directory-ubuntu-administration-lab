@@ -2,7 +2,11 @@
 
 ## Overview
 
-Logs are the primary evidence trail in IT security. Knowing where to look, what to filter for, and what each event means is a core skill for helpdesk, sysadmin, and SOC roles. This phase covers log analysis on both Windows (Event Viewer) and Linux (auth.log + journald).
+This is Phase 5 of the Windows and Linux System Administration lab. The earlier phases set up the infrastructure — Active Directory, Group Policy, Linux users, and shell scripts. This phase verifies that it's all working by reading the logs.
+
+In Phase 2, audit policies were enabled to capture logon successes, failures, and account changes. Here, those logs are actually queried to confirm events are being recorded correctly. On the Linux side, the same principle applies — checking that user activity, sudo usage, and authentication events are visible in `auth.log` and `journalctl`.
+
+Log analysis is a skill that cuts across helpdesk, sysadmin, and security roles. Being able to find the right event quickly — and know what it means — is what separates someone who can troubleshoot from someone who just guesses.
 
 ---
 
