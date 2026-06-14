@@ -28,15 +28,15 @@ In the Actions panel on the right → **Filter Current Log** → enter the Event
 
 **Filter:**
 
-![Filter to 4624](../screenshots/filter_to_4624.png)
+![Filter to 4624](screenshots/filter_to_4624.png)
 
 **Filtered results and event detail:**
 
-![Successful Logon Events](../screenshots/event_viewer_successful_logon.png)
+![Successful Logon Events](screenshots/event_viewer_successful_logon.png)
 
 **Individual event properties:**
 
-![Successful Logon Example](../screenshots/successful_login_example.png)
+![Successful Logon Example](screenshots/successful_login_example.png)
 
 **Key fields to check:**
 - **Account Name** — which account logged on
@@ -54,15 +54,15 @@ In the Actions panel on the right → **Filter Current Log** → enter the Event
 
 **Filter:**
 
-![Filter to 4625](../screenshots/filter_to_4625.png)
+![Filter to 4625](screenshots/filter_to_4625.png)
 
 **Filtered results:**
 
-![Failed Logon Events](../screenshots/event_viewer_failed_logon.png)
+![Failed Logon Events](screenshots/event_viewer_failed_logon.png)
 
 **Individual event properties:**
 
-![Failed Logon Example](../screenshots/bad_password_example.png)
+![Failed Logon Example](screenshots/bad_password_example.png)
 
 In the lab, the failure reason shown is **Unknown user name or bad password** with status `0xC000006D` and sub-status `0xC000006A` (correct username, wrong password).
 
@@ -85,15 +85,15 @@ In the lab, the failure reason shown is **Unknown user name or bad password** wi
 
 **Filter:**
 
-![Filter to 4720](../screenshots/filter_to_4720.png)
+![Filter to 4720](screenshots/filter_to_4720.png)
 
 **Filtered results:**
 
-![Account Created Events](../screenshots/event_viewer_successful_created_account.png)
+![Account Created Events](screenshots/event_viewer_successful_created_account.png)
 
 **Individual event properties:**
 
-![Account Created Example](../screenshots/account_created_successfully_example.png)
+![Account Created Example](screenshots/account_created_successfully_example.png)
 
 The event records which administrator account created the new user (`LAB\Administrator` in this lab) and the timestamp. In a real environment, every 4720 event should correspond to an approved IT ticket or onboarding request.
 
@@ -134,13 +134,13 @@ sudo tail -50 /var/log/auth.log
 sudo grep "Failed password" /var/log/auth.log
 ```
 
-![auth.log Output](../screenshots/authentication_log.png)
+![auth.log Output](screenshots/authentication_log.png)
 
 The log output shows `sudo` session events — each command run with elevated privileges is recorded, including the full command, the user who ran it, and the timestamp. This is exactly what you'd review during an incident to reconstruct what an account did.
 
 **Searching for failed logins:**
 
-![Failed Login auth.log](../screenshots/failed_login.png)
+![Failed Login auth.log](screenshots/failed_login.png)
 
 > **Ubuntu 26.04 note:** On a minimal Ubuntu 26.04 install, `auth.log` exists but may only capture `sudo` PAM events rather than SSH failures. If SSH login failures are missing from `auth.log`, use `journalctl` instead (see below).
 
@@ -166,7 +166,7 @@ sudo journalctl -f
 
 **Failed login via journalctl:**
 
-![Failed Login journalctl](../screenshots/failed_login_journalctl.png)
+![Failed Login journalctl](screenshots/failed_login_journalctl.png)
 
 ---
 
